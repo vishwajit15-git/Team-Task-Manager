@@ -1,10 +1,14 @@
+//This block dictates what Prisma should build for you when you run the command npx prisma generate.
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client-js"  //This tells Prisma to generate the Prisma Client for Node.js and TypeScript. The Prisma Client is the auto-generated, type-safe query builder that you actually use in your Express backend code to interact with your database (e.g., writing prisma.user.findUnique(...) or prisma.task.create(...)).
 }
 
+//This block dictates where your database is and what type it is. It is how Prisma connects to your actual database.
+
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql" //This tells Prisma that the underlying database engine you are using is PostgreSQL. (Prisma uses this to know what kind of SQL syntax to write under the hood).
+  url      = env("DATABASE_URL") //This tells Prisma where the database is located.
 }
 
 // --- ENUMS for Type Safety ---

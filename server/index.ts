@@ -3,13 +3,12 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-
-// We will import our routes here tomorrow (Day 2)
-// import authRoutes from './routes/auth';
+import { errorHandler } from './middleware/errorHandler';
+import authRoutes from './routes/auth';
 
 const app = express();
 
-// --- Security & Middleware ---
+//Security & Middleware
 app.use(helmet({ contentSecurityPolicy: false })); // Basic security headers
 app.use(cors({
   origin: process.env.APP_URL || 'http://localhost:3000',
@@ -18,12 +17,15 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); // Parse JSON bodies (up to 10mb for base64 fallbacks if needed)
 app.use(cookieParser()); // Parse cookies from incoming requests
 
-// --- Basic Health Check Route ---
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Team Task Manager API is running!' });
-});
 
-// --- Start Server ---
+//Api Routes
+app.use('/api/auth', authRoutes);
+
+
+//ERROR HANDLER
+app.use(errorHandler);
+
+//Start Server
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

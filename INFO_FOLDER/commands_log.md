@@ -36,3 +36,21 @@ npx prisma generate && npx prisma db push
 npx prisma studio
 ```
 **Why:** Opens a local web interface (usually `http://localhost:5555`) where you can view, edit, and manually add data directly into your AWS database.
+
+## Day 2: Authentication & Security
+
+### 6. Start Development Server
+```bash
+npm run dev
+```
+**Why:** Runs `tsx server/index.ts` which starts the Express server on `http://localhost:3000`. The server auto-restarts on file changes.
+
+### 7. Test API Routes (Postman)
+```
+POST http://localhost:3000/api/auth/register   → Register a new user
+POST http://localhost:3000/api/auth/login      → Login with credentials
+POST http://localhost:3000/api/auth/logout     → Destroy JWT cookie
+GET  http://localhost:3000/api/auth/me         → Get current logged-in user (requires cookie)
+```
+**Why:** Verifies the entire auth flow works end-to-end before building the frontend.
+

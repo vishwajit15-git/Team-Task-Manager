@@ -5,8 +5,6 @@ import { prisma } from '../lib/prisma';
 import { catchAsync } from "../utils/catchAsync";
 import { AppError } from "../utils/AppError";
 import { registerSchema, loginSchema } from "../schemas";
-import { tr } from "date-fns/locale";
-import { email } from "zod";
 
 //1.register
 export const register = catchAsync(async (req: Request, res: Response) => {
@@ -100,5 +98,13 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
 
     res.status(200).json({
         message: 'Logged out successfully'
+    });
+});
+
+//4.get current user (session persistance)
+export const getMe = catchAsync(async (req: Request, res: Response) => {
+    //req.user is already attached by the protect middleware 
+    res.status(200).json({
+        user: req.user
     });
 });

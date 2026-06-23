@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth';
+import projectRoutes from './routes/projects';
+import taskRoutes from './routes/tasks';
 
 const app = express();
 
@@ -19,7 +21,13 @@ app.use(cookieParser()); // Parse cookies from incoming requests
 
 
 //Api Routes
+
+//auth routes
 app.use('/api/auth', authRoutes);
+//project routes
+app.use('/api/projects', projectRoutes);
+//task routes
+app.use('/api/tasks', taskRoutes);
 
 
 //ERROR HANDLER

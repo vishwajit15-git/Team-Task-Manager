@@ -8,7 +8,7 @@ In a standard tutorial app, `getProjects` would simply run `SELECT * FROM Projec
 
 **Pro Upgrades Implemented:**
 1.  **Implicit Relationship Mapping:** When creating a project, we don't just insert a row. We use Prisma's `connect` API to instantly bind the logged-in user to the project's `members` array in a single transaction.
-2.  **Access Control via Queries:** Instead of fetching a project by ID and *then* writing an `if` statement to check if the user is a member, we embed the authorization check directly inside the database query. If they aren't a member, the database acts like the project doesn't even exist (returning 404). This prevents ID-guessing attacks (Insecure Direct Object Reference).
+2.  **UX vs. Security (404 vs 403):** When fetching, updating, or deleting a specific project by ID, we purposefully split our error checking into two steps. First, we check if the project exists (returning 404 if not). Then, we check if the user is a member (returning 403 Forbidden if not). This provides a superior UX over combining them into a single 404 error, and because we use UUIDs, we are still safe from ID Enumeration attacks.
 3.  **Aggregation (`_count`):** When listing projects, we don't just return the name. We use Prisma's `_count` feature to return the total number of tasks and members inside each project, which is perfect for dashboard UI cards.
 
 ---
@@ -51,22 +51,33 @@ const projects = await prisma.project.findMany({
 
 ### Get Single Project
 ```typescript
-const project = await prisma.project.findFirst({
-  where: {
-    id: req.params.id,
-    members: { some: { id: req.user.id } }
-  },
-```
-*   **Why we used it:** We use `findFirst` instead of `findUnique` because we are combining two filters: the project ID *and* the membership check. If a user tries to access `GET /api/projects/123` but they are not in the `members` array, Prisma returns `null` and we throw a 404 error.
+const project = await prisma.project.findUnique({
+  where: { id: req.params.id },
+  include: { ... }
+});
 
+if (!project) throw new AppError('Project not found', 404);
+
+const isMember = project.members.some(member => member.id === req.user.id);
+if (!isMember) throw new AppError('You do not have access to this project', 403);
+```
+*   **Why we used it:** We use `findUnique` to grab the project. If it's missing, we throw a 404. If it exists, we run a JavaScript `.some()` array method to check if the currently logged-in user is inside the `members` array. If not, we explicitly throw a 403 Forbidden error. This is the UX vs Security separation discussed above.
+
+### Update and Delete Project
 ```typescript
-  include: {
-    members: { select: { id: true, name: true, avatar: true } },
-    tasks: { orderBy: { createdAt: 'desc' } }
-  }
+const existingProject = await prisma.project.findUnique({
+  where: { id: req.params.id },
+  include: { members: { select: { id: true } } }
 });
 ```
-*   **Why we used it:** When viewing a specific project, the React frontend needs to display who is in it and what the tasks are. `include` runs the SQL JOINs automatically. Notice we use `select` inside the `members` include — we NEVER want to accidentally send password hashes to the frontend!
+*   **Why we used it:** Before running an `update` or `delete` query, we MUST verify the project exists and the user has permission. Notice we use `select: { id: true }` inside the `include`. This is an optimization trick! Because we only need to check if `req.user.id` is in the members array, we tell Postgres to ONLY return the `id` column of the members, saving memory and bandwidth.
+
+```typescript
+if (req.user.role !== 'ADMIN') {
+  throw new AppError('Only administrators can delete projects', 403);
+}
+```
+*   **Why we used it (Delete only):** We enforce Role-Based Access Control (RBAC). Even if a user is a member of a project, they cannot delete it unless their global role is `ADMIN`.
 
 ---
 

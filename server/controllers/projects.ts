@@ -74,8 +74,13 @@ export const getProjectById = catchAsync(async (req: Request, res: Response) => 
         }
     });
 
-    if (!project) {
-        throw new AppError('Project not found or you do not have access.', 404);
+    if (!project) { //project doesn't exist in the database
+        throw new AppError('Project not found.', 404);
+    }
+    //project exits,but this user is not in the members array
+    const isMember = project.members.some(member => member.id === req.user.id);
+    if (!isMember) {
+        throw new AppError('You do not have access to this project', 403); //403 means forbidden
     }
 
     res.status(200).json({
@@ -84,4 +89,61 @@ export const getProjectById = catchAsync(async (req: Request, res: Response) => 
     });
 });
 
-//4.update project
+// 4. UPDATE PROJECT
+export const updateProject = catchAsync(async (req: Request, res: Response) => {
+    const validatedData = updateProjectSchema.parse(req.body);
+
+    const existingProject = await prisma.project.findUnique({
+        where: { id: req.params.id },
+        include: { members: { select: { id: true } } } // Only need ID to verify access
+    });
+
+    if (!existingProject) {
+        throw new AppError("Project not found", 404);
+    }
+
+    const isMember = existingProject.members.some(m => m.id === req.user.id);
+    if (!isMember) {
+        throw new AppError('You do not have permission to update this project', 403);
+    }
+
+    const project = await prisma.project.update({
+        where: { id: req.params.id },
+        data: validatedData
+    });
+
+    res.status(200).json({
+        status: 'success',
+        data: { project }
+    });
+});
+
+
+// 5. DELETE PROJECT
+export const deleteProject = catchAsync(async (req: Request, res: Response) => {
+    // Only ADMINs can delete
+    if (req.user.role !== 'ADMIN') {
+        throw new AppError('Only administrators can delete projects', 403);
+    }
+
+    const existingProject = await prisma.project.findUnique({
+        where: { id: req.params.id },
+        include: { members: { select: { id: true } } }
+    });
+
+    if (!existingProject) {
+        throw new AppError("Project not found", 404);
+    }
+
+    // Even if they are an admin, they must still be a member of the project to delete it
+    const isMember = existingProject.members.some(m => m.id === req.user.id);
+    if (!isMember) {
+        throw new AppError('You do not have permission to delete this project', 403);
+    }
+
+    await prisma.project.delete({
+        where: { id: req.params.id }
+    });
+
+    res.status(204).send(); // 204 means No Content
+});

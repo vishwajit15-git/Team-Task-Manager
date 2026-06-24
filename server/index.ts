@@ -7,6 +7,8 @@ import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import taskRoutes from './routes/tasks';
+import fileRoutes from './routes/files';
+
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 //task routes
 app.use('/api/tasks', taskRoutes);
+//file routes
+app.use('/api/files', fileRoutes);
 
 
 //ERROR HANDLER

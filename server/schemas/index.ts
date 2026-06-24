@@ -42,3 +42,8 @@ export const updateTaskSchema = z.object({
   dueDate: z.string().optional(),
   assigneeId: z.string().uuid().optional(),
 });
+
+//member schemas
+export const addMemberSchema = z.object({
+  email: z.string().email("Please provide a valid email address."),
+});

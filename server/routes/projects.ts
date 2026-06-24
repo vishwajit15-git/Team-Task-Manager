@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { createProject, getProjects, getProjectById, updateProject, deleteProject } from '../controllers/projects';
 import { protect } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
+import memberRoutes from './members';
+
 
 const router = Router();
 
@@ -19,6 +21,9 @@ router.route('/:id')
     .get(getProjectById)
     .patch(updateProject)
     .delete(deleteProject);
+
+// Attach the members router as a nested route
+router.use('/:projectId/members', memberRoutes);
 
 
 export default router;

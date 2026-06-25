@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
+import http from 'http';
+import { Server } from 'socket.io';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -11,6 +13,33 @@ import fileRoutes from './routes/files';
 
 
 const app = express();
+const httpServer = http.createServer(app);
+
+// Initialize Socket.io with strict CORS
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.APP_URL || 'http://localhost:3000',
+    credentials: true,
+  },
+});
+
+// Make `io` accessible inside all Express controllers (req.app.get('io'))
+app.set('io', io);
+
+// Socket.io Connection Logic
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  // When frontend emits 'join_project', put them in a unique room
+  socket.on('join_project', (projectId) => {
+    socket.join(projectId);
+    console.log(`User ${socket.id} joined project room: ${projectId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('A user disconnected:', socket.id);
+  });
+});
 
 //Security & Middleware
 app.use(helmet({ contentSecurityPolicy: false })); // Basic security headers
@@ -34,12 +63,13 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/files', fileRoutes);
 
 
+
 //ERROR HANDLER
 app.use(errorHandler);
 
 //Start Server
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

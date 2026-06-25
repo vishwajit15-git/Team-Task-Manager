@@ -3,7 +3,7 @@ import { createProject, getProjects, getProjectById, updateProject, deleteProjec
 import { protect } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
 import memberRoutes from './members';
-
+import messageRoutes from './messages';
 
 const router = Router();
 
@@ -24,6 +24,6 @@ router.route('/:id')
 
 // Attach the members router as a nested route
 router.use('/:projectId/members', memberRoutes);
-
+router.use('/:projectId/messages', messageRoutes);
 
 export default router;

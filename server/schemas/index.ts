@@ -47,3 +47,8 @@ export const updateTaskSchema = z.object({
 export const addMemberSchema = z.object({
   email: z.string().email("Please provide a valid email address."),
 });
+
+//message schema
+export const messageSchema = z.object({
+  content: z.string().min(1, "Message cannot be empty"),
+});

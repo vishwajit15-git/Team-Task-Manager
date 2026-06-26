@@ -111,6 +111,26 @@ export const updateTask = catchAsync(async (req: Request, res: Response) => {
         }
     });
 
+    // If the task was just assigned to a new user, notify them!
+    if (validatedData.assigneeId) {
+        const notification = await prisma.notification.create({
+            data: {
+                userId: validatedData.assigneeId,
+                title: "New Task Assigned",
+                message: `You have been assigned a new task.`,
+                type: "task_assigned"
+            }
+        });
+
+        // Grab WebSockets
+        const io = req.app.get('io');
+        if (io) {
+            // We emit directly to the User's personal ID room!
+            io.to(validatedData.assigneeId).emit('new_notification', notification);
+        }
+    }
+
+
     res.status(200).json({ status: 'success', data: { task: updatedTask } });
 });
 

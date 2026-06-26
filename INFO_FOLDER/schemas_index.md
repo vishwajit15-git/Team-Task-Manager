@@ -64,6 +64,23 @@ export const createTaskSchema = z.object({
 ```
 *   **Why we used it:** Tasks have the most complex validation. Notice `z.enum()` matches exactly the Prisma Enums we defined in `schema.prisma`. The `assigneeId` uses `.uuid()` to ensure it's a valid UUID format, preventing SQL injection attempts through malformed IDs.
 
+
+### Collaboration Schemas (Members, Messages, Comments)
+```typescript
+export const addMemberSchema = z.object({
+  email: z.string().email("Please provide a valid email address."),
+});
+
+export const messageSchema = z.object({
+  content: z.string().min(1, "Message cannot be empty"),
+});
+
+export const commentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty"),
+});
+```
+*   **Why we used it:** These are intentionally kept simple. We just need to make sure the user isn't sending completely empty strings or malformed emails before letting it hit our controllers.
+
 ---
 
 ## 3. Data Flow

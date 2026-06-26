@@ -49,6 +49,13 @@ router.route('/:id')
 *   **Why we used it:** The `/:id` is a dynamic URL parameter (e.g., `/api/projects/123`). Express extracts `123` and puts it in `req.params.id` for our controller to use. 
 *   **Why `patch` instead of `put`?** `PUT` implies replacing the *entire* resource (if you don't send a description, it gets deleted). `PATCH` implies a *partial* update (if you only send a name, only the name changes). Since our Zod schema uses `.optional()`, we are doing partial updates, making `PATCH` the semantically correct HTTP method.
 
+### Nested Routing (Members & Messages)
+```typescript
+router.use('/:projectId/members', memberRoutes);
+router.use('/:projectId/messages', messageRoutes);
+```
+*   **Why we used it:** This is an advanced Express pattern. Because Members and Messages inherently belong to a specific Project, we nest their routers inside the Project router. This allows us to hit clean RESTful URLs like `POST /api/projects/123/messages`. (Note: The child routers must have `mergeParams: true` enabled to read the `123`!).
+
 ---
 
 ## 3. Data Flow

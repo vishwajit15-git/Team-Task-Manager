@@ -97,6 +97,11 @@ erDiagram
     USER ||--o{ COMMENT : "writes"
     PROJECT ||--o{ MESSAGE : "chat room"
     PROJECT ||--o{ FILE : "storage"
+    PROJECT ||--o{ MEETING : "schedules"
+    PROJECT ||--o{ POLL : "holds"
+    POLL ||--o{ POLLOPTION : "has options"
+    USER ||--o{ VOTE : "casts"
+    POLLOPTION ||--o{ VOTE : "receives"
     
     USER {
         string id PK
@@ -111,6 +116,10 @@ erDiagram
         string id PK
         string status
         string projectId FK
+    }
+    POLL {
+        string id PK
+        string question
     }
 ```
 

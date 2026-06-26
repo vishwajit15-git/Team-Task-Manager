@@ -54,6 +54,8 @@ model User {
   comments      Comment[]
   messages      Message[]
   files         File[]
+  polls         Poll[]    @relation("PollCreator")
+  votes         Vote[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -70,7 +72,9 @@ model Project {
   tasks       Task[]
   messages    Message[]
   files       File[]
-
+  meetings    Meeting[]
+  polls       Poll[]
+  
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 }
@@ -162,9 +166,16 @@ model Meeting {
   date        DateTime
   status      String   @default("Scheduled") // "Scheduled", "Completed", "Cancelled"
   
+  // Relations
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  @@index([projectId])
 }
+
 
 model Notification {
   id        String   @id @default(uuid())
@@ -177,4 +188,47 @@ model Notification {
   createdAt DateTime @default(now())
   
   @@index([userId])
+}
+
+model Poll {
+  id          String   @id @default(uuid())
+  question    String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  creatorId   String
+  creator     User     @relation("PollCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  options     PollOption[]
+
+  @@index([projectId])
+}
+
+model PollOption {
+  id      String   @id @default(uuid())
+  text    String
+  
+  // Relations
+  pollId  String
+  poll    Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  
+  votes   Vote[]
+
+  @@index([pollId])
+}
+
+model Vote {
+  id           String     @id @default(uuid())
+  
+  // Relations
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  pollOptionId String
+  pollOption   PollOption @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pollOptionId])
 }

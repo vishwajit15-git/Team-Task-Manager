@@ -52,3 +52,21 @@ export const addMemberSchema = z.object({
 export const messageSchema = z.object({
   content: z.string().min(1, "Message cannot be empty"),
 });
+
+//comments schema
+export const commentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty"),
+});
+
+// meeting schema
+export const createMeetingSchema = z.object({
+  title: z.string().min(2, "Meeting title must be at least 2 characters"),
+  description: z.string().optional(),
+  date: z.string().datetime("Must be a valid ISO Date string"),
+});
+
+// poll schema
+export const createPollSchema = z.object({
+  question: z.string().min(5, "Question must be at least 5 characters"),
+  options: z.array(z.string().min(1, "Option cannot be empty")).min(2, "Must have at least 2 options"),
+});

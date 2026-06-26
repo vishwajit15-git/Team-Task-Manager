@@ -4,6 +4,8 @@ import { protect } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
 import memberRoutes from './members';
 import messageRoutes from './messages';
+import meetingRoutes from './meetings';
+import pollRoutes from './polls';
 
 const router = Router();
 
@@ -25,5 +27,11 @@ router.route('/:id')
 // Attach the members router as a nested route
 router.use('/:projectId/members', memberRoutes);
 router.use('/:projectId/messages', messageRoutes);
+
+//meeting routes
+router.use('/:projectId/meetings', meetingRoutes);
+
+//poll routes
+router.use('/:projectId/polls', pollRoutes);
 
 export default router;

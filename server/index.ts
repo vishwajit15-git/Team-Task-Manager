@@ -10,6 +10,8 @@ import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import taskRoutes from './routes/tasks';
 import fileRoutes from './routes/files';
+import notificationRoutes from './routes/notifications';
+import dashboardRoutes from './routes/dashboard';
 
 
 const app = express();
@@ -34,6 +36,12 @@ io.on('connection', (socket) => {
   socket.on('join_project', (projectId) => {
     socket.join(projectId);
     console.log(`User ${socket.id} joined project room: ${projectId}`);
+  });
+
+  // Let the user join their own personal ID room for notifications!
+  socket.on('join_personal_room', (userId) => {
+    socket.join(userId);
+    console.log(`User ${socket.id} joined personal room: ${userId}`);
   });
 
   socket.on('disconnect', () => {
@@ -61,7 +69,10 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 //file routes
 app.use('/api/files', fileRoutes);
-
+//notification routes
+app.use('/api/notifications', notificationRoutes);
+//dashboard routes
+app.use('/api/dashboard', dashboardRoutes);
 
 
 //ERROR HANDLER

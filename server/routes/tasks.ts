@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { createTask, getTasks, updateTask, deleteTask } from '../controllers/tasks';
 import { protect } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
+import commentRoutes from './comments';
 
 const router = Router();
 
@@ -20,6 +21,9 @@ router.route('/')
 router.route('/:id')
     .patch(updateTask)
     .delete(deleteTask);
+
+//nested routes for comments in tasks
+router.use('/:taskId/comments', commentRoutes);
 
 
 export default router; 

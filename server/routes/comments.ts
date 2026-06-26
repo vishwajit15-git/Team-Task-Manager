@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMeetings, scheduleMeeting } from '../controllers/meetings';
+import { getComments, addComment } from '../controllers/comments';
 import { protect } from '../middleware/auth';
 import { apiLimiter } from '../middleware/rateLimiter';
 
@@ -9,7 +9,7 @@ router.use(protect);
 router.use(apiLimiter);
 
 router.route('/')
-    .get(getMeetings)
-    .post(scheduleMeeting);
+    .get(getComments)
+    .post(addComment);
 
 export default router;

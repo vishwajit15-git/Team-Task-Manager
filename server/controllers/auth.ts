@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 import { catchAsync } from "../utils/catchAsync";
 import { AppError } from "../utils/AppError";
-import { registerSchema, loginSchema } from "../schemas";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../schemas";
 
 //1.register
 export const register = catchAsync(async (req: Request, res: Response) => {
@@ -107,4 +108,67 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
     res.status(200).json({
         user: req.user
     });
+});
+
+//5.forgot password
+export const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+    const { email } = forgotPasswordSchema.parse(req.body);
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+        // We throw a generic message so attackers can't fish for emails
+        return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
+    }
+
+    // Generate token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Save hashed token and expiry (1 hour) to db
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            resetToken: hashedToken,
+            resetExpires: new Date(Date.now() + 60 * 60 * 1000)
+        }
+    });
+
+    // In a real app, you would send an email via SendGrid/AWS SES here
+    // For now, we simulate success
+    // e.g. await sendEmail({ to: user.email, text: `Reset link: /reset-password/${resetToken}` })
+
+    res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
+});
+
+//6.reset password
+export const resetPassword = catchAsync(async (req: Request, res: Response) => {
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    const { password } = resetPasswordSchema.parse(req.body);
+
+    const user = await prisma.user.findFirst({
+        where: {
+            resetToken: hashedToken,
+            resetExpires: { gt: new Date() } // Must not be expired
+        }
+    });
+
+    if (!user) {
+        throw new AppError('Token is invalid or has expired', 400);
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Update user and clear reset tokens
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            passwordHash,
+            resetToken: null,
+            resetExpires: null
+        }
+    });
+
+    res.status(200).json({ message: 'Password has been successfully reset. Please log in.' });
 });

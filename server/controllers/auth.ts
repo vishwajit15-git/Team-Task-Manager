@@ -30,7 +30,8 @@ export const register = catchAsync(async (req: Request, res: Response) => {
         data: {
             name: validatedData.name,
             email: validatedData.email,
-            passwordHash
+            passwordHash,
+            role: validatedData.role || "MEMBER"
         },
     });
 

@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma';
 import { catchAsync } from "../utils/catchAsync";
 import { AppError } from "../utils/AppError";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../schemas";
+import { sendEmail } from "../lib/email";
 
 //1.register
 export const register = catchAsync(async (req: Request, res: Response) => {
@@ -134,9 +135,14 @@ export const forgotPassword = catchAsync(async (req: Request, res: Response) => 
         }
     });
 
-    // In a real app, you would send an email via SendGrid/AWS SES here
-    // For now, we simulate success
-    // e.g. await sendEmail({ to: user.email, text: `Reset link: /reset-password/${resetToken}` })
+    // Send email using Resend
+    const resetLink = `${process.env.APP_URL}/reset-password/${resetToken}`;
+    await sendEmail({
+        to: user.email,
+        subject: 'Password Reset Request',
+        text: `You requested a password reset. Please go to this link to reset your password: ${resetLink}`,
+        html: `<p>You requested a password reset.</p><p>Please click the link below to reset your password:</p><a href="${resetLink}">${resetLink}</a>`
+    });
 
     res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
 });

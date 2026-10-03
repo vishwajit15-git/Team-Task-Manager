@@ -21,6 +21,9 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
         message = 'This email is already in use.';
     }
 
+    //log the error for debugging
+    console.error('ERROR:', statusCode, message, err.stack ? err.stack.split('\n')[1] : '');
+
     //this will be shown to the user
     res.status(statusCode).json({
         status: 'error',

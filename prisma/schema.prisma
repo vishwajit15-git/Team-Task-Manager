@@ -86,6 +86,7 @@ model Task {
   status      TaskStatus   @default(TODO)
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
+  startDate   DateTime?
   
   // Relations
   projectId   String

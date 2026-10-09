@@ -40,6 +40,9 @@ export const getProjects = catchAsync(async (req: Request, res: Response) => {
         include: {
             _count: {
                 select: { tasks: true, members: true }
+            },
+            tasks: {
+                select: { status: true }
             }
         },
         orderBy: { createdAt: 'desc' }

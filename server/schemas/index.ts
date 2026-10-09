@@ -39,6 +39,7 @@ export const createTaskSchema = z.object({
   description: z.string().optional(),
   status: z.enum(["TODO", "IN_PROGRESS", "REVIEW", "COMPLETED"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional(),
+  startDate: z.string().optional(),
   dueDate: z.string().optional(),
   assigneeId: z.string().uuid().optional(),
 });
@@ -48,6 +49,7 @@ export const updateTaskSchema = z.object({
   description: z.string().optional(),
   status: z.enum(["TODO", "IN_PROGRESS", "REVIEW", "COMPLETED"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional(),
+  startDate: z.string().optional(),
   dueDate: z.string().optional(),
   assigneeId: z.string().uuid().optional(),
 });

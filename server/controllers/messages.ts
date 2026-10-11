@@ -26,7 +26,8 @@ export const getMessages = catchAsync(async (req: Request, res: Response) => {
     const messages = await prisma.message.findMany({
         where: { projectId },
         include: {
-            sender: { select: { id: true, name: true, avatar: true } }
+            sender: { select: { id: true, name: true, avatar: true } },
+            replyTo: { include: { sender: { select: { name: true } } } }
         },
         orderBy: { createdAt: 'asc' }//oldest first like chat app
     });
@@ -60,11 +61,15 @@ export const sendMessage = catchAsync(async (req: Request, res: Response) => {
     const newMessage = await prisma.message.create({
         data: {
             content: validatedData.content,
+            attachmentUrl: validatedData.attachmentUrl,
+            attachmentType: validatedData.attachmentType,
+            replyToId: validatedData.replyToId,
             projectId,
             senderId: req.user.id
         },
         include: {
-            sender: { select: { id: true, name: true, avatar: true } }
+            sender: { select: { id: true, name: true, avatar: true } },
+            replyTo: { include: { sender: { select: { name: true } } } }
         }
     });
 

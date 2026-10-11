@@ -61,7 +61,10 @@ export const addMemberSchema = z.object({
 
 //message schema
 export const messageSchema = z.object({
-  content: z.string().min(1, "Message cannot be empty"),
+  content: z.string().optional(),
+  attachmentUrl: z.string().optional(),
+  attachmentType: z.string().optional(),
+  replyToId: z.string().uuid().optional(),
 });
 
 //comments schema

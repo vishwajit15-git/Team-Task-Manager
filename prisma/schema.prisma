@@ -124,8 +124,14 @@ model Comment {
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  content   String
+  id             String   @id @default(uuid())
+  content        String?
+  attachmentUrl  String?
+  attachmentType String?
+  
+  replyToId      String?
+  replyTo        Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[] @relation("MessageReplies")
   
   // Relations
   projectId String
@@ -137,6 +143,7 @@ model Message {
   createdAt DateTime @default(now())
   
   @@index([projectId])
+  @@index([replyToId])
 }
 
 model File {

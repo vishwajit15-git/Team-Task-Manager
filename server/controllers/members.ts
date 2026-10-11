@@ -51,6 +51,20 @@ export const addMember = catchAsync(async (req: Request, res: Response) => {
         }
     });
 
+    const notification = await prisma.notification.create({
+        data: {
+            userId: userToAdd.id,
+            title: "Added to Project",
+            message: `You were added to the project "${project.name}".`,
+            type: "project_invite"
+        }
+    });
+
+    const io = req.app.get('io');
+    if (io) {
+        io.to(userToAdd.id).emit('new_notification', notification);
+    }
+
     res.status(200).json({
         status: 'success',
         message: 'User successfully added to this project.',

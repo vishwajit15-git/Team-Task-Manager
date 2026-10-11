@@ -39,6 +39,22 @@ export const createTask = catchAsync(async (req: Request, res: Response) => {
         }
     });
 
+    if (validatedData.assigneeId) {
+        const notification = await prisma.notification.create({
+            data: {
+                userId: validatedData.assigneeId,
+                title: "New Task Assigned",
+                message: `You were assigned the task "${task.title}".`,
+                type: "task_assigned"
+            }
+        });
+
+        const io = req.app.get('io');
+        if (io) {
+            io.to(validatedData.assigneeId).emit('new_notification', notification);
+        }
+    }
+
     res.status(201).json({
         status: 'success',
         data: { task }

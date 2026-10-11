@@ -69,10 +69,12 @@ export const getProjectById = catchAsync(async (req: Request, res: Response) => 
             members: {
                 select: { id: true, name: true, email: true, avatar: true, role: true }
             },
-            //return recent tasks
+            //return tasks with assignee
             tasks: {
-                orderBy: { createdAt: 'desc' },
-                take: 10
+                include: {
+                    assignee: { select: { id: true, name: true } }
+                },
+                orderBy: { createdAt: 'desc' }
             }
         }
     });

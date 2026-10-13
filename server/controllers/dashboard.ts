@@ -5,58 +5,70 @@ import { catchAsync } from '../utils/catchAsync';
 export const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
     const userId = req.user.id;
     const now = new Date();
+    const queryProjectId = typeof req.query.projectId === 'string' && req.query.projectId.trim() !== ''
+        ? req.query.projectId.trim()
+        : undefined;
 
-    // 1. Active Projects Count
-    const activeProjects = await prisma.project.count({
-        where: {
-            members: { some: { id: userId } },
-            status: 'ACTIVE'
-        }
+    // 1. Projects user is a member of
+    const userProjects = await prisma.project.findMany({
+        where: { members: { some: { id: userId } } },
+        include: { members: { select: { id: true } } }
     });
+    const userProjectIds = userProjects.map(p => p.id);
 
-    // Total Projects (for percentage bar)
-    const totalProjects = await prisma.project.count({
-        where: { members: { some: { id: userId } } }
-    });
+    // If queryProjectId specified and user is a member of it, scope to that project, else all user projects
+    const targetProjectIds = (queryProjectId && userProjectIds.includes(queryProjectId))
+        ? [queryProjectId]
+        : userProjectIds;
 
-    // 2. My Open Tasks (Tasks assigned to you that are not completed)
+    // Active Projects Count
+    const activeProjects = userProjects.filter(p => p.status === 'ACTIVE').length;
+    const totalProjects = userProjects.length;
+
+    // 2. My Open Tasks (Tasks assigned to the current user that are not completed)
     const openTasks = await prisma.task.count({
         where: {
+            projectId: { in: targetProjectIds },
             assigneeId: userId,
             status: { not: 'COMPLETED' }
         }
     });
 
-    // 3. Completed Tasks
+    // Total tasks assigned to the current user
+    const myTotalTasks = await prisma.task.count({
+        where: {
+            projectId: { in: targetProjectIds },
+            assigneeId: userId
+        }
+    });
+
+    // 3. Completed Tasks across the project(s)
     const completedTasks = await prisma.task.count({
         where: {
-            assigneeId: userId,
+            projectId: { in: targetProjectIds },
             status: 'COMPLETED'
         }
     });
 
-    // Total tasks assigned to user (for completion % bar)
+    // Total tasks across the project(s) (for completion % bar)
     const totalTasks = await prisma.task.count({
-        where: { assigneeId: userId }
+        where: {
+            projectId: { in: targetProjectIds }
+        }
     });
 
-    // 4. Team Capacity (Total members across all your projects)
-    const projects = await prisma.project.findMany({
-        where: { members: { some: { id: userId } } },
-        include: { members: { select: { id: true } } }
-    });
-    
-    const uniqueMemberIds = new Set();
-    projects.forEach(p => p.members.forEach(m => uniqueMemberIds.add(m.id)));
+    // 4. Team Capacity (Total unique members across projects)
+    const uniqueMemberIds = new Set<string>();
+    const scopedProjects = (queryProjectId && userProjectIds.includes(queryProjectId))
+        ? userProjects.filter(p => p.id === queryProjectId)
+        : userProjects;
+    scopedProjects.forEach(p => p.members.forEach(m => uniqueMemberIds.add(m.id)));
     const teamCapacity = uniqueMemberIds.size;
-
-    // Base filter: tasks in projects the user is a member of
-    const projectIds = projects.map(p => p.id);
 
     // 5. Ongoing Tasks (IN_PROGRESS, not overdue)
     const ongoingTasks = await prisma.task.findMany({
         where: {
-            projectId: { in: projectIds },
+            projectId: { in: targetProjectIds },
             status: 'IN_PROGRESS',
             OR: [
                 { dueDate: null },
@@ -74,7 +86,7 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response) 
     // 6. Pending Tasks (TODO status)
     const pendingTasks = await prisma.task.findMany({
         where: {
-            projectId: { in: projectIds },
+            projectId: { in: targetProjectIds },
             status: 'TODO'
         },
         include: {
@@ -88,7 +100,7 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response) 
     // 7. Overdue Tasks (dueDate < now, not completed)
     const overdueTasks = await prisma.task.findMany({
         where: {
-            projectId: { in: projectIds },
+            projectId: { in: targetProjectIds },
             status: { not: 'COMPLETED' },
             dueDate: { lt: now }
         },
@@ -102,7 +114,7 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response) 
 
     // 8. Rich Activity Log: recent comments + recently updated tasks in user's projects
     const recentComments = await prisma.comment.findMany({
-        where: { task: { projectId: { in: projectIds } } },
+        where: { task: { projectId: { in: targetProjectIds } } },
         include: {
             author: { select: { name: true } },
             task: { select: { title: true } }
@@ -112,7 +124,7 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response) 
     });
 
     const recentTasks = await prisma.task.findMany({
-        where: { projectId: { in: projectIds } },
+        where: { projectId: { in: targetProjectIds } },
         include: { creator: { select: { name: true } } },
         orderBy: { createdAt: 'desc' },
         take: 8
@@ -139,6 +151,7 @@ export const getDashboardStats = catchAsync(async (req: Request, res: Response) 
                 activeProjects,
                 totalProjects,
                 openTasks,
+                myTotalTasks,
                 completedTasks,
                 totalTasks,
                 teamCapacity

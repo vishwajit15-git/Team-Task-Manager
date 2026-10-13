@@ -50,6 +50,7 @@ export const register = catchAsync(async (req: Request, res: Response) => {
     res.status(201).json({
         message: "Registration succesful",
         user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        token,
     });
 });
 
@@ -88,6 +89,7 @@ export const login = catchAsync(async (req: Request, res: Response) => {
     res.status(200).json({
         message: 'Login succesful',
         user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        token,
     });
 });
 

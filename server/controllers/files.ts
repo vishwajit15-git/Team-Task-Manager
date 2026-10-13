@@ -166,9 +166,9 @@ export const deleteFile = catchAsync(async (req: Request, res: Response) => {
         throw new AppError('File not found', 404);
     }
 
-    // Only the uploader can delete their own files/folders
-    if (file.uploaderId !== req.user.id) {
-        throw new AppError('You can only delete files you uploaded.', 403);
+    // Only the uploader or an admin can delete files/folders
+    if (file.uploaderId !== req.user.id && req.user.role !== 'ADMIN') {
+        throw new AppError('You can only delete files you uploaded or you must be an administrator.', 403);
     }
 
     // If it's a folder, also delete all files inside it

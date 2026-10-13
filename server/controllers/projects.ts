@@ -65,9 +65,20 @@ export const getProjectById = catchAsync(async (req: Request, res: Response) => 
             }
         },
         include: {
-            //return member but exclude passsword hashes
+            // Select public member fields including dynamic DB profile attributes
             members: {
-                select: { id: true, name: true, email: true, avatar: true, role: true }
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    avatar: true,
+                    role: true,
+                    title: true,
+                    department: true,
+                    bio: true,
+                    skills: true,
+                    createdAt: true
+                } as any
             },
             //return tasks with assignee
             tasks: {
@@ -83,7 +94,7 @@ export const getProjectById = catchAsync(async (req: Request, res: Response) => 
         throw new AppError('Project not found.', 404);
     }
     //project exits,but this user is not in the members array
-    const isMember = project.members.some(member => member.id === req.user.id);
+    const isMember = (project as any).members?.some((member: any) => member.id === req.user.id);
     if (!isMember) {
         throw new AppError('You do not have access to this project', 403); //403 means forbidden
     }

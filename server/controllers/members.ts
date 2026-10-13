@@ -89,17 +89,36 @@ export const removeMember = catchAsync(async (req: Request, res: Response) => {
     }
 
     const isRequesterMember = project.members.some(m => m.id === req.user.id);
-
     if (!isRequesterMember) {
-        throw new AppError('You do not have permission to remove users from this project.', 403)
+        throw new AppError('You do not have access to this project.', 403);
     }
 
-    //2.prevent removing yourself
+    // Only project administrators can remove members
+    if (req.user.role !== 'ADMIN') {
+        throw new AppError('Only administrators can remove members from a project.', 403);
+    }
+
+    // Prevent removing yourself
     if (userId === req.user.id) {
         throw new AppError('You cannot remove yourself. Use the leave project feature instead.', 400);
     }
 
-    //disconnect the user
+    // Check target user to prevent removing administrators
+    const targetUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true }
+    });
+    if (targetUser?.role === 'ADMIN') {
+        throw new AppError('Project administrators cannot be removed.', 400);
+    }
+
+    // Unassign any tasks in this project assigned to this user
+    await prisma.task.updateMany({
+        where: { projectId, assigneeId: userId },
+        data: { assigneeId: null }
+    });
+
+    // Disconnect the user
     await prisma.project.update({
         where: { id: projectId },
         data: {
@@ -114,3 +133,56 @@ export const removeMember = catchAsync(async (req: Request, res: Response) => {
         message: 'User successfully removed from the project.'
     });
 });
+
+//3. Update member profile (title, department, bio, skills)
+export const updateMember = catchAsync(async (req: Request, res: Response) => {
+    const { projectId, userId } = req.params;
+    const { title, department, bio, skills } = req.body;
+
+    const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: { select: { id: true } } }
+    });
+
+    if (!project) {
+        throw new AppError('Project not found', 404);
+    }
+
+    const isRequesterMember = project.members.some(m => m.id === req.user.id);
+    if (!isRequesterMember) {
+        throw new AppError('You do not have access to this project.', 403);
+    }
+
+    // Only allow updating if requester is admin or is updating their own profile
+    const isSelf = userId === req.user.id;
+    const isAdmin = req.user.role === 'ADMIN';
+    if (!isSelf && !isAdmin) {
+        throw new AppError('Only project administrators or the member themselves can update profile details.', 403);
+    }
+
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+            ...(title !== undefined && { title }),
+            ...(department !== undefined && { department }),
+            ...(bio !== undefined && { bio }),
+            ...(Array.isArray(skills) && { skills }),
+        } as any,
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            role: true,
+            title: true,
+            department: true,
+            bio: true,
+            skills: true
+        } as any
+    });
+
+    res.status(200).json({
+        status: 'success',
+        data: { user: updatedUser }
+    });
+});

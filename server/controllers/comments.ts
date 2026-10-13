@@ -3,7 +3,6 @@ import { prisma } from '../lib/prisma';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import { commentSchema } from '../schemas';
-import { data } from "react-router-dom";
 
 export const getComments = catchAsync(async (req: Request, res: Response) => {
     const { taskId } = req.params;

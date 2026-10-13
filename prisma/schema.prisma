@@ -44,6 +44,10 @@ model User {
   passwordHash  String
   role          Role      @default(MEMBER)
   avatar        String?   // S3 URL
+  title         String?   // Specialization / Job title
+  department    String?   // Department / Team domain
+  bio           String?   // Professional summary
+  skills        String[]  @default([]) // Skill tags
   resetToken    String?
   resetExpires  DateTime?
   
